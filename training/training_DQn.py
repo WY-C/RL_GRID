@@ -53,8 +53,6 @@ class SelfPlayAgent:
     def update_target_model(self):
         self.target_model.load_state_dict(self.model.state_dict())
 
-
-
     def update_q_value(self, old_pos, action, reward, new_pos):
         old_q = self.q_table[old_pos[0], old_pos[1], action]
         max_future_q = np.max(self.q_table[new_pos[0], new_pos[1]])
@@ -178,8 +176,6 @@ def self_play(env, agent1, agent2, episodes, test=False):
                     print("tick", total_ticks / printing)
                     print("reward", total_reward / printing)
                     print("success", cnt_success / printing, "collision", cnt_collision / printing)
-                    x.append(episode)
-                    y.append(total_reward / printing)
                     cnt_success = 0
                     cnt_collision = 0
                     total_ticks = 0  # 총 틱 수

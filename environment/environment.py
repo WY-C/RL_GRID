@@ -5,7 +5,6 @@ class GridEnvironment_1player:
     def __init__(self, grid_size=5):
         self.grid_size = grid_size
         self.agent1_pos = [0, 0]  # 에이전트1 초기 위치
-        #self.agent2_pos = [0, 1]  # 에이전트2 초기 위치
         self.reward_pos = [3, 4] # 리워드 위치 (고정)
         self.wall_pos = [1,2]#generate_wall_pos()  # 벽 (랜덤)
     
