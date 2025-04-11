@@ -12,13 +12,10 @@
 #
 #
 #탐험률을 줄여가면서 학습
-import numpy as np
-import matplotlib.pyplot as plt
-
 from environment.environment import GridEnvironment_1player, GridEnvironment_2player
-from training.training_Qlearning import SelfPlayAgent, solo_play, self_play, visualize_q_values 
-
-
+from training.training_DQn import DQNAgent, solo_play
+import matplotlib.pyplot as plt
+import torch
 # 시각화 코드
 """
 env = GridEnvironment_1player()
@@ -55,8 +52,9 @@ plt.show()
 #학습 코드
 
 env1 = GridEnvironment_1player()
-agent1 = SelfPlayAgent(env1, agent_id=0)
-solo_play(env1, agent1, episodes=100000, test=False)
+agent1 = DQNAgent(2, 4)
+x, y, z = solo_play(env1, agent1, episodes=5000, test=False)
+torch.save(z, 'savemodel.pth')
 #np.save("agent1_q_table.npy", agent1.q_table)
 
 #self_play(env, agent1, agent1, episodes=1000000)
@@ -66,13 +64,13 @@ solo_play(env1, agent1, episodes=100000, test=False)
 #print("학습 완료!")
 
 #시각화 코드
-#plt.plot(x, y, label='training', color='blue', linestyle='--', marker='o')
-#plt.title("Line Graph Example")
-#plt.xlabel("episode")
-#plt.ylabel("reward")
-#plt.legend()  # 범례 추가
-#plt.grid(True)  # 격자 추가
-#plt.show()
+plt.plot(x, y, label='training', color='blue', linestyle='--', marker='o')
+plt.title("Line Graph Example")
+plt.xlabel("episode")
+plt.ylabel("reward")
+plt.legend()  # 범례 추가
+plt.grid(True)  # 격자 추가
+plt.show()
 
 #visualize_q_values(agent1)
 #visualize_q_values(agent2)
