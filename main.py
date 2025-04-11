@@ -53,7 +53,7 @@ plt.show()
 
 env1 = GridEnvironment_1player()
 agent1 = DQNAgent(2, 4)
-x, y, z = solo_play(env1, agent1, episodes=5000, test=False)
+x, y, z = solo_play(env1, agent1, episodes=1000000, test=False)
 torch.save(z, 'savemodel.pth')
 #np.save("agent1_q_table.npy", agent1.q_table)
 
@@ -64,13 +64,7 @@ torch.save(z, 'savemodel.pth')
 #print("학습 완료!")
 
 #시각화 코드
-plt.plot(x, y, label='training', color='blue', linestyle='--', marker='o')
-plt.title("Line Graph Example")
-plt.xlabel("episode")
-plt.ylabel("reward")
-plt.legend()  # 범례 추가
-plt.grid(True)  # 격자 추가
-plt.show()
+
 
 #visualize_q_values(agent1)
 #visualize_q_values(agent2)

@@ -29,22 +29,22 @@ class DQNAgent:
         self.state_size = state_size
         self.action_size = action_size
 
-        self.gamma = 0.95
+        self.gamma = 0.9
         self.epsilon = 1.0
-        self.epsilon_min = 0.01
+        self.epsilon_min = 0.001
         self.epsilon_decay = 0.99
 
         self.model = DQN(state_size, action_size).to(device)
         self.target_model = DQN(state_size, action_size).to(device)
         
-        self.learning_rate = 0.001      
+        self.learning_rate = 0.01
         self.optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
         self.criterion = nn.MSELoss()
 
 
 
 
-        self.replay_buffer = ReplayBuffer(batch_size=32, buffer_size=10000)
+        self.replay_buffer = ReplayBuffer(batch_size=64, buffer_size=10000)
         
         
     def choose_action(self, state):
@@ -62,8 +62,31 @@ class DQNAgent:
     def update_target_model(self):
         self.target_model.load_state_dict(self.model.state_dict())
 
+    #폐기
+    def visualize(self, grid_size):
+        actions = ['↑', '↓', '←', '→']
+        fig, ax = plt.subplots(grid_size, grid_size, figsize=(12, 12))
+
+        for i in range(grid_size):
+            for j in range(grid_size):
+                # 상태 정규화
+                state = np.array([i / (grid_size - 1), j / (grid_size - 1)], dtype=np.float32)
+                state = torch.FloatTensor(state).unsqueeze(0).to(device)
+
+                with torch.no_grad():
+                    q_values = self.model(state).cpu().numpy().flatten()
+
+                max_action = np.argmax(q_values)
+                ax[i, j].imshow(np.zeros((1, 1)), cmap='gray', vmin=0, vmax=1)
+                ax[i, j].set_title(f"{actions[max_action]}\n{q_values[max_action]:.2f}", fontsize=10)
+                ax[i, j].axis('off')
+
+        plt.tight_layout()
+        plt.show()
+
+
     def update(self):
-        if len(self.replay_buffer) < 32:
+        if len(self.replay_buffer) < 64:
             return
         state, action, reward, next_state, done = self.replay_buffer.get_batch()
         state = state.to(device)
@@ -83,7 +106,7 @@ class DQNAgent:
         self.optimizer.step()
         
 class ReplayBuffer:
-    def __init__(self, batch_size = 32, buffer_size = 10000):
+    def __init__(self, batch_size, buffer_size = 10000):
         self.batch_size = batch_size
         self.buffer = deque(maxlen=buffer_size)
 
@@ -136,11 +159,13 @@ def solo_play(env, agent, episodes, test = False):
         total_reward += reward
         
         if episode % printing == 0:
-            agent.epsilon = max(agent.epsilon_min, agent.epsilon * agent.epsilon_decay)
+            agent.epsilon = max(agent.epsilon_min, agent.epsilon - 0.05)
+        
+        if episode % (printing * 5) == 0:
             agent.update_target_model()
         
         if episode % printing == 0:
-            print(f"Episode {episode}/{episodes}, Ticks: {episode_ticks}, Total Ticks: {total_ticks/printing}, Total Reward: {total_reward/printing}")
+            print(f"Episode {episode}/{episodes}, Ticks: {episode_ticks}, Total Ticks: {total_ticks/printing}, Total Reward: {total_reward/printing:.2f}, Epsilon: {agent.epsilon:.2f}")
             x.append(episode)
             y.append(total_reward / printing)            
             episode_ticks = 0

@@ -5,8 +5,8 @@ class GridEnvironment_1player:
     def __init__(self, grid_size=5):
         self.grid_size = grid_size
         self.agent_pos = [0, 0]  # 에이전트1 초기 위치
-        self.reward_pos = [3, 4] # 리워드 위치 (고정)
-        self.wall_pos = self.generate_wall_pos()  # 벽 (랜덤)
+        self.reward_pos = [4,4]#self.generate_reward_pos() # 리워드 위치 (고정)
+        #self.wall_pos = self.generate_wall_pos()  # 벽 (랜덤)
     
 
 
@@ -54,7 +54,7 @@ class GridEnvironment_1player:
             reward = 1.5 - (episode_ticks / 100)
             if reward == 0:
                 reward = 1e-16  # 리워드가 0일 때 작은 값으로 설정
-            self.reward_pos = None
+            #self.reward_pos = None
             return reward, 1, old_pos
         else:
             return 0, 0, old_pos
@@ -63,7 +63,7 @@ class GridEnvironment_1player:
     def reset(self):
         # 환경 초기화
         self.agent_pos = [0, 0]
-        self.reward_pos = [3,4]  # 리워드 위치 고정
+        self.reward_pos = [4,4]# self.generate_reward_pos()  # 리워드 위치 고정
         self.wall_pos = self.generate_wall_pos()  # 벽 위치 초기화
 
 #벽 아직 없음
