@@ -16,6 +16,7 @@ from environment.environment import GridEnvironment_1player, GridEnvironment_2pl
 from training.training_DQn import DQNAgent, solo_play
 import matplotlib.pyplot as plt
 import torch
+import numpy as np
 # 시각화 코드
 """
 env = GridEnvironment_1player()
@@ -52,9 +53,18 @@ plt.show()
 #학습 코드
 
 env1 = GridEnvironment_1player()
-agent1 = DQNAgent(2, 4)
-x, y, z = solo_play(env1, agent1, episodes=1000000, test=False)
-torch.save(z, 'savemodel.pth')
+agent = DQNAgent(4, 4)
+state_dict = solo_play(env1, agent, episodes=30000, test=False)
+try:
+    agent.model.load_state_dict(torch.load("123.pth"))
+    agent.model.eval()
+    print("파일 있음")
+    state_dict = solo_play(env1, agent, episodes=2500, test=False)
+
+except:
+    print("파일 없음")
+    state_dict = solo_play(env1, agent, episodes=3000, test=False)
+torch.save(state_dict, '1.5-100.pth')
 #np.save("agent1_q_table.npy", agent1.q_table)
 
 #self_play(env, agent1, agent1, episodes=1000000)
