@@ -13,10 +13,58 @@
 #
 #탐험률을 줄여가면서 학습
 from environment.environment import GridEnvironment_1player, GridEnvironment_2player
-from training.training_DQn import DQNAgent, solo_play
+from training.training_DQn import DQNAgent, solo_play, self_play
 import matplotlib.pyplot as plt
 import torch
 import numpy as np
+
+
+#학습 코드
+
+env1 = GridEnvironment_2player()
+agent1 = DQNAgent(10, 4)
+agent2 = DQNAgent(10, 4)
+state_dict = self_play(env1, agent1, agent2, episodes=30000, test=False)
+"""
+try:
+    agent.model.load_state_dict(torch.load("123.pth"))
+    agent.model.eval()
+    print("파일 있음")
+    agent.epsilon = 0.1
+    state_dict = solo_play(env1, agent, episodes=500, test=False)
+except:
+    print("파일 없음")
+    state_dict = solo_play(env1, agent, episodes=5000, test=False)
+torch.save(state_dict, '1.5-100.pth')
+"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#np.save("agent1_q_table.npy", agent1.q_table)
+
+#self_play(env, agent1, agent1, episodes=1000000)
+#agent2 = SelfPlayAgent(env1, agent_id=1)
+#solo_play(env1, agent2, episodes=100000, test=False)
+#np.save("agent2_q_table.npy", agent2.q_table)
+#print("학습 완료!")
+
+#시각화 코드
+
+
+#visualize_q_values(agent1)
+#visualize_q_values(agent2)
+
 # 시각화 코드
 """
 env = GridEnvironment_1player()
@@ -49,33 +97,3 @@ plt.xlabel("X-axis")
 plt.ylabel("Y-axis")
 plt.show()
 """
-
-#학습 코드
-
-env1 = GridEnvironment_1player()
-agent = DQNAgent(6, 4)
-state_dict = solo_play(env1, agent, episodes=30000, test=False)
-try:
-    agent.model.load_state_dict(torch.load("123.pth"))
-    agent.model.eval()
-    print("파일 있음")
-    agent.epsilon = 0.1
-    state_dict = solo_play(env1, agent, episodes=500, test=False)
-
-except:
-    print("파일 없음")
-    state_dict = solo_play(env1, agent, episodes=5000, test=False)
-torch.save(state_dict, '1.5-100.pth')
-#np.save("agent1_q_table.npy", agent1.q_table)
-
-#self_play(env, agent1, agent1, episodes=1000000)
-#agent2 = SelfPlayAgent(env1, agent_id=1)
-#solo_play(env1, agent2, episodes=100000, test=False)
-#np.save("agent2_q_table.npy", agent2.q_table)
-#print("학습 완료!")
-
-#시각화 코드
-
-
-#visualize_q_values(agent1)
-#visualize_q_values(agent2)
