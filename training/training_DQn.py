@@ -37,7 +37,7 @@ class DQNAgent:
         self.model = DQN(state_size, action_size).to(device)
         self.target_model = DQN(state_size, action_size).to(device)
         
-        self.learning_rate = 0.01
+        self.learning_rate = 0.001
         self.optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
         self.criterion = nn.MSELoss()
 
@@ -113,6 +113,7 @@ class ReplayBuffer:
         reward2_pos = np.array([x[6] for x in data])
         wall_pos = np.array([x[7] for x in data])
         done = np.array([x[8] for x in data])
+
         my_state = torch.FloatTensor(my_state)
         other_state = torch.FloatTensor(other_state)
         next_state = torch.FloatTensor(next_state)
@@ -182,7 +183,8 @@ def self_play(env, agent1, agent2, episodes, test = False):
     
     total_reward1 = 0
     total_reward2 = 0
-    total_ticks = 0
+    total_ticks1 = 0
+    total_ticks2 = 0
     reward_1 = 0
     reward_2 = 0
     old_pos_1 = [0,0]
@@ -191,25 +193,32 @@ def self_play(env, agent1, agent2, episodes, test = False):
         env.reset()
         done_1 = False
         done_2 = False
-        episode_ticks = 0  # 에피소드 틱 수
+        episode_ticks_1 = 0 
+        episode_ticks_2 = 0
         while not done_1 or not done_2:
-            episode_ticks += 1  # 한 틱 증가
             if not done_1:
+                #print(episode)
+                episode_ticks_1 += 1
                 action1 = agent1.choose_action(env.agent1_pos, env.agent2_pos, env.reward1_pos, env.reward2_pos, env.wall_pos)
-                reward_1, done_1, old_pos_1 = env.step(action1, episode_ticks, 1)
+                reward_1, done_1, old_pos_1 = env.step(action1, episode_ticks_1, 1)
                 agent1.replay_buffer.add(old_pos_1, old_pos_2, env.agent1_pos, action1, reward_1, env.reward1_pos, env.reward2_pos, env.wall_pos, done_1)
-                agent1.update()
             if not done_2:
+                #print(env.agent2_pos, env.reward1_pos, env.reward2_pos)
+                episode_ticks_2 +=1
                 action2 = agent2.choose_action(env.agent2_pos, env.agent1_pos, env.reward1_pos, env.reward2_pos, env.wall_pos)
-                reward_2, done_2, old_pos_2 = env.step(action2, episode_ticks, 1)
+                reward_2, done_2, old_pos_2 = env.step(action2, episode_ticks_2, 2)
                 agent2.replay_buffer.add(old_pos_2, old_pos_1, env.agent2_pos, action2, reward_2, env.reward1_pos, env.reward2_pos, env.wall_pos, done_2)
-                agent2.update()   
-        total_ticks += episode_ticks
+            
+            agent1.update()
+            agent2.update()   
+        total_ticks1 += episode_ticks_1
+        total_ticks2 += episode_ticks_2
         total_reward1 += reward_1
         total_reward2 += reward_2
         
-        #if episode == 5000:
-        #    agent.save_model("123.pth")
+        if episode == 5000:
+            agent1.save_model("DQN_SelfPlay_Agent1.pth")
+            agent2.save_model("DQN_SelfPlay_Agent2.pth")
         if episode % printing == 0:
             agent1.epsilon = max(agent1.epsilon_min, agent1.epsilon * agent1.epsilon_decay)
             agent2.epsilon = max(agent2.epsilon_min, agent2.epsilon * agent2.epsilon_decay)
@@ -222,16 +231,18 @@ def self_play(env, agent1, agent2, episodes, test = False):
             agent2.update_target_model()
         
         if episode % printing == 0:
-            total_reward = (total_reward1 + total_reward2) / 2 
-            print(f"Episode {episode}/{episodes}, Ticks: {episode_ticks}, Total Ticks: {total_ticks/printing}, Total Reward: {total_reward/printing:.2f}, Epsilon: {agent1.epsilon:.2f}")
-            x.append(episode)
-            y.append(total_reward1 / printing)            
-            episode_ticks = 0
+            total_reward = (total_reward1 + total_reward2) / 2
+            total_ticks = (total_ticks1 + total_ticks2) / 2
+            print(f"Episode {episode}/{episodes}, 1 Tick: {episode_ticks_1}, 2 Tick: {episode_ticks_2}, Total Ticks: {total_ticks/printing}, Total Reward: {total_reward/printing:.2f}, Epsilon: {agent1.epsilon:.2f}")
+            #x.append(episode)
+            #y.append(total_reward1 / printing)            
+            #episode_ticks = 0
             total_reward1 = 0
             total_reward2 = 0
-            total_ticks = 0
+            total_ticks1 = 0
+            total_ticks2 = 0
 
-    return x, y, agent1.model.state_dict(), agent2.model.state_dict()
+    return agent1.model.state_dict(), agent2.model.state_dict()
 
 
 def visualize_qvalues(env, agent):
