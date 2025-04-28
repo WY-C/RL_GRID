@@ -44,7 +44,7 @@ class PER:
     def get_batch(self):
         #print(self.priority)
         priorities = np.array(self.priority)
-        probs = priorities / np.sum(priorities)
+        probs = priorities / np.sum(priorities) #alpha = 1
 
         indices = np.random.choice(len(self.buffer), self.batch_size, p=probs)
         experience = [self.buffer[i] for i in indices]

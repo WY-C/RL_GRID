@@ -1,6 +1,6 @@
 from env import GridEnv
 from Agent import DQNAgent
-
+from matplotlib import pyplot as plt
 
 Agent1 = DQNAgent(state_size=8, action_size=4)
 Agent2 = DQNAgent(state_size=8, action_size=4)
@@ -10,6 +10,10 @@ tot_ticks = 0
 printing = 100
 action = [0, 0]
 reward = [0, 0]
+x = []
+y = []
+plt.xlabel('Episode')
+plt.ylabel('Average Reward')
 for i in range(100000000):
     state, _ = env.reset()
     
@@ -33,9 +37,18 @@ for i in range(100000000):
         tot_ticks += env.get_ticks()
 
     if (i + 1) % 50 == 0:
+
         Agent1.update_target_model() 
     if terminated and (i + 1) % printing == 0:
         DQNAgent.epsilon = max(DQNAgent.epsilon_min, DQNAgent.epsilon * DQNAgent.epsilon_decay)  
         print(f"Episode {i+1} finished with reward: {tot_reward/printing:.2f}, ticks: {tot_ticks/printing:.3f}, Epsilon: {DQNAgent.epsilon:.3f}")
+
+        x.append(i)
+        y.append(tot_reward/printing)
+
         tot_ticks = 0
         tot_reward = 0
+
+    if terminated and (i + 1) % 1000 == 0:
+        plt.plot(x, y)
+        plt.show()
