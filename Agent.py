@@ -76,6 +76,66 @@ class PER:
     def __len__(self):
         return len(self.buffer)
 
+    
+class DQNAgent:
+    def __init__(self, state_size, action_size):
+        
+        self.state_size = state_size
+        self.action_size = action_size
+
+        self.gamma = 0.9
+        self.epsilon = 1.0
+        self.epsilon_min = 0.01
+        self.epsilon_decay = 0.95
+
+        self.model = DQN(state_size, action_size).to(device)
+        self.target_model = DQN(state_size, action_size).to(device)
+        
+        self.learning_rate = 0.001
+        self.optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
+        self.criterion = nn.MSELoss()
+
+        self.replay_buffer = ReplayBuffer(batch_size=64, buffer_size=10000)
+        
+    def save_model(self, path):
+        torch.save(self.model.state_dict(), path)
+        
+    def choose_action(self, state):
+        if np.random.rand() <= self.epsilon:
+            return np.random.choice(self.action_size)
+        
+        state = torch.FloatTensor(state).unsqueeze(0).to(device)
+
+        with torch.no_grad():
+            q_values = self.model(state)
+
+        return torch.argmax(q_values, dim=1).item()
+    
+    def update_target_model(self):
+        self.target_model.load_state_dict(self.model.state_dict())
+
+    def update(self):
+        if len(self.replay_buffer) < 64:
+            return
+        
+        states, actions, rewards, next_states, dones = self.replay_buffer.get_batch()
+        states = states.to(device)
+        actions = actions.to(device)
+        rewards = rewards.to(device)
+        next_states = next_states.to(device)
+        dones = dones.to(device)
+        qs = self.model(states).gather(1, actions.view(-1, 1)).squeeze(1)
+
+        with torch.no_grad():
+            next_qs = self.target_model(next_states).max(dim=1)[0]
+            target = rewards + (1 - dones) * self.gamma * next_qs
+            
+        loss = self.criterion(qs, target)
+        self.optimizer.zero_grad()
+               
+        loss.backward()
+        self.optimizer.step()
+        
 class ReplayBuffer:
     def __init__(self, batch_size, buffer_size):
         self.batch_size = batch_size
