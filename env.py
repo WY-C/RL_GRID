@@ -7,7 +7,7 @@ class GridEnv(gym.Env):
         super(GridEnv, self).__init__()
         self.grid_size = grid_size
         self.action_space = gym.spaces.Discrete(4)  # Up, Down, Left, Right
-        self.state = np.zeros(8)
+        self.state = np.zeros(4)
         self.ticks = 0
 
     def reset(self):
@@ -15,12 +15,12 @@ class GridEnv(gym.Env):
         
         self.state[0] = 0
         self.state[1] = 0
-        self.state[2] = self.grid_size - 1
-        self.state[3] = self.grid_size - 1
 
-        goal = random.sample(range(1, self.grid_size*self.grid_size), 2)
-        self.state[4], self.state[5] = goal[0] // self.grid_size, goal[0] % self.grid_size
-        self.state[6], self.state[7] = goal[1] // self.grid_size, goal[1] % self.grid_size
+        goal = random.sample(range(1, self.grid_size*self.grid_size), 1)
+        self.state[2], self.state[3] = goal[0] // self.grid_size, goal[0] % self.grid_size
+        
+        #self.state[2] = self.grid_size - 1
+        #self.state[3] = self.grid_size - 1
         return self.state, {}
 
     def step(self, action):
