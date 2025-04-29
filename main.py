@@ -14,11 +14,12 @@ for i in range(100000000):
     while not terminated:
         action = Agent.choose_action(state)
         next_state, reward, terminated, _, _ = env.step(action) #truncated 없음
-        Agent.replay_buffer.add(state, action, reward, next_state, terminated)
+        Agent.replay_buffer.add(state, action, reward, next_state, terminated, 10000)
 
         tot_reward += reward
         state = next_state.copy()
         Agent.update()
+        #PER도 update
 
     if terminated:
         tot_ticks += env.get_ticks()

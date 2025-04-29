@@ -6,10 +6,8 @@ class GridEnv(gym.Env):
     def __init__(self, grid_size): #goal position 제거 확인하기
         super(GridEnv, self).__init__()
         self.grid_size = grid_size
-        #self.agent_position = (0, 0)
-        #self.goal_position = goal_position
         self.action_space = gym.spaces.Discrete(4)  # Up, Down, Left, Right
-        self.state = np.zeros(4)
+        self.state = np.zeros(8)
         self.ticks = 0
 
     def reset(self):
@@ -17,12 +15,12 @@ class GridEnv(gym.Env):
         
         self.state[0] = 0
         self.state[1] = 0
+        self.state[2] = self.grid_size - 1
+        self.state[3] = self.grid_size - 1
 
-        goal = random.sample(range(1, self.grid_size*self.grid_size), 1)
-        self.state[2], self.state[3] = goal[0] // self.grid_size, goal[0] % self.grid_size
-        
-        #self.state[2] = self.grid_size - 1
-        #self.state[3] = self.grid_size - 1
+        goal = random.sample(range(1, self.grid_size*self.grid_size), 2)
+        self.state[4], self.state[5] = goal[0] // self.grid_size, goal[0] % self.grid_size
+        self.state[6], self.state[7] = goal[1] // self.grid_size, goal[1] % self.grid_size
         return self.state, {}
 
     def step(self, action):
@@ -53,9 +51,9 @@ class GridEnv(gym.Env):
 
  
         if new_distance < old_distance:
-            reward = 0.1
+            reward = 0.2
         else:
-            reward = -0.1
+            reward = -0.17
 
         if (x == gx) and (y == gy):
             terminated = True
@@ -80,9 +78,6 @@ class GridEnv(gym.Env):
         for row in grid:
             print(' '.join(row))
         print()
-
-
-
 
     def check_wall(self, action):
         x, y = self.state[0], self.state[1]
