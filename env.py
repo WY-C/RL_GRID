@@ -14,12 +14,15 @@ class GridEnv(gym.Env):
 
     def reset(self):
         self.ticks = 0
-        #goal = random.sample(range(1, self.grid_size*self.grid_size), 1)
-        #self.state[2], self.state[3] = goal[0] // self.grid_size, goal[0] % self.grid_size
+        
         self.state[0] = 0
         self.state[1] = 0
-        self.state[2] = self.grid_size - 1
-        self.state[3] = self.grid_size - 1
+
+        goal = random.sample(range(1, self.grid_size*self.grid_size), 1)
+        self.state[2], self.state[3] = goal[0] // self.grid_size, goal[0] % self.grid_size
+        
+        #self.state[2] = self.grid_size - 1
+        #self.state[3] = self.grid_size - 1
         return self.state, {}
 
     def step(self, action):
@@ -29,6 +32,9 @@ class GridEnv(gym.Env):
         x, y, gx, gy = self.state[0], self.state[1], self.state[2], self.state[3]
         
         old_distance = abs(x - gx) + abs(y - gy)
+
+
+
 
         if action == 0:  # Up
             x = max(0, x - 1)
@@ -45,19 +51,20 @@ class GridEnv(gym.Env):
         self.state[1] = y
 
 
+ 
+        if new_distance < old_distance:
+            reward = 0.1
+        else:
+            reward = -0.1
+
         if (x == gx) and (y == gy):
             terminated = True
         else:
             terminated = False         
-        
-        if new_distance < old_distance:
-            reward = 0.2
-        else:
-            reward = -0.1
-        
+               
         if terminated:
-            reward = (2.0 - self.ticks / 100)
-        #print(self.state.shape)
+            reward = (1.5 - self.ticks / 100)
+        #print(self.state, reward, terminated)
         return self.state, reward, terminated, False, {}
     
     def get_ticks(self):
@@ -73,3 +80,18 @@ class GridEnv(gym.Env):
         for row in grid:
             print(' '.join(row))
         print()
+
+
+
+
+    def check_wall(self, action):
+        x, y = self.state[0], self.state[1]
+        if action == 0 and x == 0:
+            return True
+        elif action == 1 and x == self.grid_size - 1:
+            return True
+        elif action == 2 and y == 0:
+            return True
+        elif action == 3 and y == self.grid_size - 1:
+            return True
+        return False

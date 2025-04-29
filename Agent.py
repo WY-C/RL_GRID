@@ -47,10 +47,12 @@ class DQNAgent:
     def choose_action(self, state):
         if np.random.rand() <= self.epsilon:
             return np.random.choice(self.action_size)
+        
         state = torch.FloatTensor(state).unsqueeze(0).to(device)
 
         with torch.no_grad():
             q_values = self.model(state)
+
         return torch.argmax(q_values, dim=1).item()
     
     def update_target_model(self):
@@ -71,14 +73,15 @@ class DQNAgent:
         with torch.no_grad():
             next_qs = self.target_model(next_states).max(dim=1)[0]
             target = rewards + (1 - dones) * self.gamma * next_qs
-        
+            
         loss = self.criterion(qs, target)
         self.optimizer.zero_grad()
+               
         loss.backward()
         self.optimizer.step()
         
 class ReplayBuffer:
-    def __init__(self, batch_size, buffer_size = 10000):
+    def __init__(self, batch_size, buffer_size):
         self.batch_size = batch_size
         self.buffer = deque(maxlen=buffer_size)
 
