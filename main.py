@@ -1,78 +1,41 @@
-#todo
-# reward 위치 고정하고, 벽 위치는 랜덤. #진행중
-# DQN으로 변환
-# 혼자 학습시키고, 멀티를 따로 학습하기. 
-# environment에 done 추가했음.
-# 
-#
-#
-#
-#
-#
-#
-#
-#탐험률을 줄여가면서 학습
-import numpy as np
-import matplotlib.pyplot as plt
-
-from environment.environment import GridEnvironment_1player, GridEnvironment_2player
-from training.training_Qlearning import SelfPlayAgent, solo_play, self_play, visualize_q_values 
+from env import GridEnv
+from Agent import DQNAgent
 
 
-# 시각화 코드
-"""
-env = GridEnvironment_1player()
-agent1 = SelfPlayAgent(env, agent_id=0)
-agent2 = SelfPlayAgent(env, agent_id=1)
+Agent1 = DQNAgent(state_size=8, action_size=4)
+Agent2 = DQNAgent(state_size=8, action_size=4)
+env = GridEnv(5)
+tot_reward = 0
+tot_ticks = 0
+printing = 100
+action = [0, 0]
+reward = [0, 0]
+for i in range(100000000):
+    state, _ = env.reset()
+    
+    terminated = False
+    while not terminated:
+        action[0] = Agent1.choose_action(state)
+        action[1] = Agent2.choose_action(state)
+        next_state, reward, terminated, _, _ = env.step(action) #truncated 없음
+        Agent1.replay_buffer.add(state, action[0], reward[0], next_state, terminated, 1.0)
+        Agent2.replay_buffer.add(state, action[1], reward[1], next_state, terminated, 1.0)
 
-agent1.q_table = np.load("agent1_q_table.npy")
-agent2.q_table = np.load("agent2_q_table.npy")
+        tot_reward += reward[0] #+ reward[1]
+        
+        state = next_state.copy()
+        Agent1.update()
+        Agent2.update()
+        #PER도 update
 
+    if terminated:
+        #print(tot_reward, env.get_ticks())
+        tot_ticks += env.get_ticks()
 
-# 좌표별 최댓값 및 방향 계산
-max_values = np.max(agent1.q_table, axis=2)  # 각 좌표에서 최댓값
-max_directions = np.argmax(agent1.q_table, axis=2)  # 각 좌표에서 최댓값의 행동 (0: 상, 1: 하, 2: 좌, 3: 우)
-
-# 시각화를 위해 방향 이름 정의
-directions = ['↑', '↓', '←', '→']
-
-# 히트맵으로 최댓값 시각화
-plt.figure(figsize=(8, 6))
-plt.imshow(max_values, cmap='viridis', interpolation='nearest')
-plt.colorbar(label="Max Q-Value")
-plt.title("Maximum Q-Values and Directions")
-
-# 각 셀에 방향 추가
-for i in range(max_values.shape[0]):  # 행
-    for j in range(max_values.shape[1]):  # 열
-        plt.text(j, i, directions[max_directions[i, j]], ha='center', va='center', color='white', fontsize=8)
-
-plt.xlabel("X-axis")
-plt.ylabel("Y-axis")
-plt.show()
-"""
-
-#학습 코드
-
-env1 = GridEnvironment_1player()
-agent1 = SelfPlayAgent(env1, agent_id=0)
-solo_play(env1, agent1, episodes=100000, test=False)
-#np.save("agent1_q_table.npy", agent1.q_table)
-
-#self_play(env, agent1, agent1, episodes=1000000)
-#agent2 = SelfPlayAgent(env1, agent_id=1)
-#solo_play(env1, agent2, episodes=100000, test=False)
-#np.save("agent2_q_table.npy", agent2.q_table)
-#print("학습 완료!")
-
-#시각화 코드
-#plt.plot(x, y, label='training', color='blue', linestyle='--', marker='o')
-#plt.title("Line Graph Example")
-#plt.xlabel("episode")
-#plt.ylabel("reward")
-#plt.legend()  # 범례 추가
-#plt.grid(True)  # 격자 추가
-#plt.show()
-
-#visualize_q_values(agent1)
-#visualize_q_values(agent2)
+    if (i + 1) % 50 == 0:
+        Agent1.update_target_model() 
+    if terminated and (i + 1) % printing == 0:
+        DQNAgent.epsilon = max(DQNAgent.epsilon_min, DQNAgent.epsilon * DQNAgent.epsilon_decay)  
+        print(f"Episode {i+1} finished with reward: {tot_reward/printing:.2f}, ticks: {tot_ticks/printing:.3f}, Epsilon: {DQNAgent.epsilon:.3f}")
+        tot_ticks = 0
+        tot_reward = 0
