@@ -36,8 +36,8 @@ for i in range(100000000):
     if (i + 1) % 50 == 0:
         Agent1.update_target_model() 
     if terminated and (i + 1) % printing == 0:
-        Agent.update_target_model()
-        print(f"Episode {i+1} finished with reward: {tot_reward/printing:.3f}, Epsilon: {Agent.epsilon:.5f}")
-        Agent.epsilon = max(Agent.epsilon_min, Agent.epsilon * Agent.epsilon_decay)
+        DQNAgent.epsilon = max(DQNAgent.epsilon_min, DQNAgent.epsilon * DQNAgent.epsilon_decay)  
+        print(f"Episode {i+1} finished with reward: {tot_reward/printing:.2f}, ticks: {tot_ticks/printing:.3f}, Epsilon: {DQNAgent.epsilon:.3f}")
+        tot_ticks = 0
         tot_reward = 0
         

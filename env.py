@@ -25,12 +25,6 @@ class GridEnv(gym.Env):
         
         #self.state[2] = self.grid_size - 1
         #self.state[3] = self.grid_size - 1
-
-        goal = random.sample(range(1, self.grid_size*self.grid_size), 1)
-        self.state[2], self.state[3] = goal[0] // self.grid_size, goal[0] % self.grid_size
-        
-        #self.state[2] = self.grid_size - 1
-        #self.state[3] = self.grid_size - 1
         return self.state, {}
 
     def step(self, action):
@@ -41,18 +35,18 @@ class GridEnv(gym.Env):
         x1, y1, x2, y2 = self.state[0], self.state[1], self.state[2], self.state[3]
         gx1, gy1, gx2, gy2 = self.state[4], self.state[5], self.state[6], self.state[7]
         
-        if(abs(x1 - gx1) + abs(y1 - gy1)) > (abs(x2 - gx1) + abs(y2 - gy1)):
-            old_distance_1 = abs(x2 - gx1) + abs(y2 - gy1)
+        if(abs(x1 - gx1) + abs(y1 - gy1)) > (abs(x1 - gx2) + abs(y1 - gy2)):
+            old_distance_1 = abs(x1 - gx2) + abs(y1 - gy2)
             Agent1_Goal = 2
         else:
             old_distance_1 = abs(x1 - gx1) + abs(y1 - gy1)
             Agent1_Goal = 1
 
-        if(abs(x1 - gx2) + abs(y1 - gy2)) > (abs(x2 - gx2) + abs(y2 - gy2)):
+        if(abs(x2 - gx1) + abs(y2 - gy1)) > (abs(x2 - gx2) + abs(y2 - gy2)):
             old_distance_2 = abs(x2 - gx2) + abs(y2 - gy2)
             Agent2_Goal = 2
         else:
-            old_distance_2 = abs(x1 - gx2) + abs(y1 - gy2)
+            old_distance_2 = abs(x2 - gx1) + abs(y2 - gy1)
             Agent2_Goal = 1
 
 
@@ -92,12 +86,12 @@ class GridEnv(gym.Env):
 
 
         if new_distance_1 < old_distance_1:
-            self.reward[0] = 0.2
+            self.reward[0] = 0.3
         else:
             self.reward[0] = -0.17
 
         if new_distance_2 < old_distance_2:
-            self.reward[1] = 0.2
+            self.reward[1] = 0.3
         else:
             self.reward[1] = -0.17
 
@@ -109,42 +103,13 @@ class GridEnv(gym.Env):
             gy2, self.state[7] = 99, 99
                
         if gx1 == 99 and gx2 == 99 and gy1 == 99 and gy2 == 99:
-        x, y, gx, gy = self.state[0], self.state[1], self.state[2], self.state[3]
-        
-        old_distance = abs(x - gx) + abs(y - gy)
-
-
-
-
-        if action == 0:  # Up
-            x = max(0, x - 1)
-        elif action == 1:  # Down
-            x = min(self.grid_size - 1, x + 1)
-        elif action == 2:  # Left
-            y = max(0, y - 1)
-        elif action == 3:  # Right
-            y = min(self.grid_size - 1, y + 1)
-
-        new_distance = abs(x - gx) + abs(y - gy)
-
-        self.state[0] = x
-        self.state[1] = y
-
-
- 
-        if new_distance < old_distance:
-            reward = 0.1
-        else:
-            reward = -0.1
-
-        if (x == gx) and (y == gy):
             terminated = True
         else:
             terminated = False
 
         if terminated:
-            self.reward[0] = (1.5 - self.ticks / 100)
-            self.reward[1] = (1.5 - self.ticks / 100)
+            self.reward[0] = (2 - self.ticks / 100)
+            self.reward[1] = (2 - self.ticks / 100)
         #print(self.state, reward, terminated)
         return self.state, self.reward, terminated, False, {}
     
