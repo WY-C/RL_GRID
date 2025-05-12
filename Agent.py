@@ -8,7 +8,9 @@ import matplotlib.pyplot as plt
 
 state_size = 8
 action_size = 4
-device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+device = torch.device("cuda")
+
+#if torch.cuda.is_available() else torch.device("cpu")
 
 class DQN(nn.Module):
     def __init__(self, state_size, action_size):
@@ -22,7 +24,9 @@ class DQN(nn.Module):
         x = torch.relu(self.fc2(x))
         x = self.fc3(x)
         return x
-
+    
+#PER과 ReplayBuffer 비교하기
+#original / new 항상 비교하기
 class PER:
     def __init__(self, batch_size, buffer_size):
         self.batch_size = batch_size
@@ -44,7 +48,8 @@ class PER:
     def get_batch(self):
         #print(self.priority)
         priorities = np.array(self.priority)
-        probs = priorities / np.sum(priorities) #alpha = 1
+        probs = (priorities / np.sum(priorities)) #.power(self.alpha)
+        
 
         indices = np.random.choice(len(self.buffer), self.batch_size, p=probs)
         experience = [self.buffer[i] for i in indices]
@@ -78,7 +83,7 @@ class PER:
 
     
 class DQNAgent:
-
+    
     model = DQN(state_size, action_size).to(device)
     target_model = DQN(state_size, action_size).to(device)
     learning_rate = 0.001
@@ -98,8 +103,20 @@ class DQNAgent:
         self.action_size = action_size
         
     def save_model(self, path):
-        torch.save(self.model.state_dict(), path)
+        torch.save({
+        'model_state_dict': self.model.state_dict(),
+        'target_model_state_dict': self.target_model.state_dict(),
+        'optimizer_state_dict': self.optimizer.state_dict(),
+        'epsilon': self.epsilon,
+        }, path)
         
+    def load_model(self, path):
+        checkpoint = torch.load(path)
+        self.model.load_state_dict(checkpoint['model_state_dict'])
+        self.target_model.load_state_dict(checkpoint['target_model_state_dict'])
+        self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        DQNAgent.epsilon = checkpoint['epsilon']
+
     def choose_action(self, state):
         if np.random.rand() <= self.epsilon:
             return np.random.choice(self.action_size)
@@ -118,7 +135,7 @@ class DQNAgent:
         if len(self.replay_buffer) < 64:
             return
         
-        states, actions, rewards, next_states, dones, weights, incides = self.replay_buffer.get_batch()
+        states, actions, rewards, next_states, dones, weights, indices = self.replay_buffer.get_batch()
         states = states.to(device)
         actions = actions.to(device)
         rewards = rewards.to(device)
@@ -128,8 +145,11 @@ class DQNAgent:
         qs = self.model(states).gather(1, actions.view(-1, 1)).squeeze(1)
 
         with torch.no_grad():
-            next_qs = self.target_model(next_states).max(dim=1)[0]
+            next_actions = self.model(next_states).argmax(dim=1)
+            next_qs = self.target_model(next_states).gather(1, next_actions.view(-1, 1)).squeeze(1)
+            #next_qs = self.target_model(next_states).max(dim=1)[0]
             target = rewards + (1 - dones) * self.gamma * next_qs
+
         
         td_errors = target - qs
         loss = (td_errors.pow(2) * weights).mean()
@@ -138,4 +158,4 @@ class DQNAgent:
         loss.backward()
         self.optimizer.step()
 
-        self.replay_buffer.update_priorities(incides, td_errors)
+        self.replay_buffer.update_priorities(indices, td_errors)
