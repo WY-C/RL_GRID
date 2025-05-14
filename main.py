@@ -31,16 +31,20 @@ class RewardLoggerCallback(BaseCallback):
 # 환경 초기화
 #env = DummyVecEnv(lambda: GridEnv(grid_size=5))
 env = GridEnv(5)
-model = DQN("MlpPolicy", env, verbose=1)
+model =DQN.load("dqn_grid", env=env)
 reward_logger = RewardLoggerCallback(verbose=1)
 model.learn(total_timesteps=200000, callback=reward_logger)
 print(reward_logger.episode_rewards)
-model.save("dqn_grid")
-# SB3 호환성 확인
-#check_env(env, warn=True)
+model.save("dqn_grid_2")
 
-# 벡터화된 환경 생성
-#vec_env = DummyVecEnv([lambda: env])
+# model = DQN("MlpPolicy", env, verbose=1)
+# reward_logger = RewardLoggerCallback(verbose=1)
+# model.learn(total_timesteps=200000, callback=reward_logger)
+# print(reward_logger.episode_rewards)
+# model.save("dqn_grid")
+#총 1610개
+# SB3 호환성 확인
+
 
 """
 Agent1 = ReplayAgent(state_size=8, action_size=4)
