@@ -8,9 +8,7 @@ import matplotlib.pyplot as plt
 
 state_size = 8
 action_size = 4
-device = torch.device("cuda")
-
-#if torch.cuda.is_available() else torch.device("cpu")
+device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
 class DQN(nn.Module):
     def __init__(self, state_size, action_size):
@@ -90,9 +88,9 @@ class DQNAgent:
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
     criterion = nn.MSELoss()
 
-    replay_buffer = PER(batch_size=64, buffer_size=10000)
+    replay_buffer = PER(batch_size=64, buffer_size=100000)
 
-    gamma = 0.9
+    gamma = 0.99
     epsilon = 1.0
     epsilon_min = 0.01
     epsilon_decay = 0.95
@@ -159,3 +157,108 @@ class DQNAgent:
         self.optimizer.step()
 
         self.replay_buffer.update_priorities(indices, td_errors)
+
+
+class ReplayBuffer:
+    def __init__(self, batch_size, buffer_size = 10000):
+        self.batch_size = batch_size
+        self.buffer = deque(maxlen=buffer_size)
+
+    def add(self, state, action, reward, next_state, done):
+        data = (state, action, reward, next_state, done)
+        self.buffer.append(data)
+
+
+    def get_batch(self):
+        data = random.sample(self.buffer, self.batch_size)
+
+        state = np.array([x[0] for x in data])
+        action = np.array([x[1] for x in data])
+        reward = np.array([x[2] for x in data])
+        next_state = np.array([x[3] for x in data])
+        done = np.array([x[4] for x in data])
+
+        state = torch.FloatTensor(state)
+        action = torch.LongTensor(action)
+        reward = torch.FloatTensor(reward)
+        next_state = torch.FloatTensor(next_state)
+        done = torch.FloatTensor(done)
+
+        return state, action, reward, next_state, done
+    def __len__(self):
+        return len(self.buffer)
+
+
+class ReplayAgent:
+    
+    model = DQN(state_size, action_size).to(device)
+    target_model = DQN(state_size, action_size).to(device)
+    learning_rate = 0.0001
+    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+    criterion = nn.MSELoss()
+
+    replay_buffer = ReplayBuffer(batch_size=64, buffer_size=100000)
+
+    gamma = 0.99
+    epsilon = 1.0
+    epsilon_min = 0.01
+    epsilon_decay = 0.99
+
+    def __init__(self, state_size, action_size):
+        
+        self.state_size = state_size
+        self.action_size = action_size
+        
+    def save_model(self, path):
+        torch.save({
+        'model_state_dict': self.model.state_dict(),
+        'target_model_state_dict': self.target_model.state_dict(),
+        'optimizer_state_dict': self.optimizer.state_dict(),
+        'epsilon': self.epsilon,
+        }, path)
+        
+    def load_model(self, path):
+        checkpoint = torch.load(path)
+        self.model.load_state_dict(checkpoint['model_state_dict'])
+        self.target_model.load_state_dict(checkpoint['target_model_state_dict'])
+        self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        DQNAgent.epsilon = checkpoint['epsilon']
+
+    def choose_action(self, state):
+        if np.random.rand() <= self.epsilon:
+            return np.random.choice(self.action_size)
+        
+        state = torch.FloatTensor(state).unsqueeze(0).to(device)
+
+        with torch.no_grad():
+            q_values = self.model(state)
+
+        return torch.argmax(q_values, dim=1).item()
+    
+    def update_target_model(self):
+        self.target_model.load_state_dict(self.model.state_dict())
+
+    def update(self):
+        if len(self.replay_buffer) < 64:
+            return
+        
+        states, actions, rewards, next_states, dones = self.replay_buffer.get_batch()
+        states = states.to(device)
+        actions = actions.to(device)
+        rewards = rewards.to(device)
+        next_states = next_states.to(device)
+        dones = dones.to(device)
+        qs = self.model(states).gather(1, actions.view(-1, 1)).squeeze(1)
+
+        with torch.no_grad():
+            #next_actions = self.model(next_states).argmax(dim=1)
+            #next_qs = self.target_model(next_states).gather(1, next_actions.view(-1, 1)).squeeze(1)
+            next_qs = self.target_model(next_states).max(dim=1)[0]
+            target = rewards + (1 - dones) * self.gamma * next_qs
+
+        
+        loss = self.criterion(qs, target)
+        self.optimizer.zero_grad()
+               
+        loss.backward()
+        self.optimizer.step()

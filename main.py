@@ -1,5 +1,5 @@
 from env import GridEnv, GridEnvGUI
-from Agent import DQNAgent
+from Agent import DQNAgent, ReplayAgent
 from matplotlib import pyplot as plt
 #from stable_baselines3 import DQN  # 또는 DQN, A2C 등
 
@@ -9,8 +9,8 @@ from matplotlib import pyplot as plt
 # model.save("dqn_grid")
 
 env = GridEnv(5)
-Agent1 = DQNAgent(state_size=8, action_size=4)
-Agent2 = DQNAgent(state_size=8, action_size=4)
+Agent1 = ReplayAgent(state_size=8, action_size=4)
+Agent2 = ReplayAgent(state_size=8, action_size=4)
 
 tot_reward = 0
 tot_timestep = 0
@@ -43,8 +43,8 @@ for i in range(100000000):
         action[0] = Agent1.choose_action(state)
         action[1] = Agent2.choose_action(state)
         next_state, reward, terminated, _, _ = env.step(action) #truncated 없음
-        Agent1.replay_buffer.add(state, action[0], reward[0], next_state, terminated, 1.0)
-        Agent2.replay_buffer.add(state, action[1], reward[1], next_state, terminated, 1.0)
+        Agent1.replay_buffer.add(state, action[0], reward[0], next_state, terminated)
+        Agent2.replay_buffer.add(state, action[1], reward[1], next_state, terminated)
 
         #reward 연산 해결하기
         tot_reward += (reward[0] + reward[1])
@@ -69,7 +69,7 @@ for i in range(100000000):
         tot_reward = 0
 
     if (i + 1) % 1000 == 0:
-        Agent1.save_model(f"model/{i+1}_Agent1_mk2.pth")
-        Agent2.save_model(f"model/{i+1}_Agent2_mk2.pth")
+        Agent1.save_model(f"model/{i+1}_Agent1_DQN_Replay.pth")
+        Agent2.save_model(f"model/{i+1}_Agent2_DQN_Replay.pth")
         print(f"Model saved at episode {i+1}")
     

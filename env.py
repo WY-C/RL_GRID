@@ -104,14 +104,14 @@ class GridEnv(gym.Env):
         if new_distance_1 < old_distance_1:
             self.reward[0] = 0.15
         elif new_distance_1 == old_distance_1:
-            self.reward[0] = -0.2
+            self.reward[0] = -0.3
         else:
             self.reward[0] = -0.1
 
         if new_distance_2 < old_distance_2:
             self.reward[1] = 0.15
         elif new_distance_2 == old_distance_2:
-            self.reward[1] = -0.2
+            self.reward[1] = -0.3
         else:
             self.reward[1] = -0.1
 
