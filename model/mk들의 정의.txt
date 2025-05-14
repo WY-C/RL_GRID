@@ -1,2 +1,4 @@
 mk1: 그냥 처음
 mk2: 벽에 박을때마다 -reward
+mk3: mk2 + goal pos -99
+mk4: 벽에 박으면 -reward 강화

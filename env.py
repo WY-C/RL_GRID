@@ -6,20 +6,22 @@ import time
 class GridEnv(gym.Env):
 
 
-    def __init__(self, grid_size): #goal position 제거 확인하기
+    def __init__(self, grid_size, render_mode=None): #goal position 제거 확인하기
         super(GridEnv, self).__init__()
         self.grid_size = grid_size
-        #self.observation_space = gym.spaces.Discrete(8)
-        self.action_space = gym.spaces.Discrete(4)  # Up, Down, Left, Right
+        self.render_mode = render_mode
+        self.observation_space = gym.spaces.Box(low=0, high=self.grid_size - 1, shape=(8,), dtype=np.float64)
+        self.action_space = gym.spaces.Discrete(16)  # Up, Down, Left, Right
         self.state = np.zeros(8)
         self.ticks = 0
         self.reward = np.zeros(2)
         self.timestep = 1
         self.tot_reward = 0
 
-        self.grid_GUI = GridEnvGUI(grid_size)
-
-    def reset(self, seed=None):
+        #self.grid_GUI = GridEnvGUI(grid_size)
+        if render_mode == "human":
+            self.grid_GUI = GridEnvGUI(grid_size)  # GUI 초기화
+    def reset(self, seed=None, options=None):
         super().reset(seed=seed)
         self.timestep = 1
         self.tot_reward = 0
@@ -36,13 +38,14 @@ class GridEnv(gym.Env):
         
         #self.state[2] = self.grid_size - 1
         #self.state[3] = self.grid_size - 1
-        return self.state, {}
+        return self.state.copy(), {}
 
     def step(self, action):
         
-        assert self.action_space.contains(action[0]), f"{action[0]!r} ({type(action[0])})는 유효하지 않은 동작입니다."
-        assert self.action_space.contains(action[1]), f"{action[1]!r} ({type(action[1])})는 유효하지 않은 동작입니다."
-        
+        #assert self.action_space.contains(action[0]), f"{action[0]!r} ({type(action[0])})는 유효하지 않은 동작입니다."
+        #assert self.action_space.contains(action[1]), f"{action[1]!r} ({type(action[1])})는 유효하지 않은 동작입니다."
+        action_agent1 = action // 4
+        action_agent2 = action % 4
         x1, y1, x2, y2 = self.state[0], self.state[1], self.state[2], self.state[3]
         gx1, gy1, gx2, gy2 = self.state[4], self.state[5], self.state[6], self.state[7]
         
@@ -62,22 +65,22 @@ class GridEnv(gym.Env):
 
 
 
-        if action[0] == 0:  # Up
+        if action_agent1 == 0:  # Up
             x1 = max(0, x1 - 1)
-        elif action[0] == 1:  # Down
+        elif action_agent1 == 1:  # Down
             x1 = min(self.grid_size - 1, x1 + 1)
-        elif action[0] == 2:  # Left
+        elif action_agent1 == 2:  # Left
             y1 = max(0, y1 - 1)
-        elif action[0] == 3:  # Right
+        elif action_agent1 == 3:  # Right
             y1= min(self.grid_size - 1, y1 + 1)
 
-        if action[1] == 0:  # Up
+        if action_agent2 == 0:  # Up
             x2 = max(0, x2 - 1)
-        elif action[1] == 1:  # Down
+        elif action_agent2 == 1:  # Down
             x2 = min(self.grid_size - 1, x2 + 1)
-        elif action[1] == 2:  # Left
+        elif action_agent2 == 2:  # Left
             y2 = max(0, y2 - 1)
-        elif action[1] == 3:  # Right
+        elif action_agent2 == 3:  # Right
             y2 = min(self.grid_size - 1, y2 + 1)
 
         if Agent1_Goal == 1:
@@ -104,36 +107,36 @@ class GridEnv(gym.Env):
         if new_distance_1 < old_distance_1:
             self.reward[0] = 0.15
         elif new_distance_1 == old_distance_1:
-            self.reward[0] = -0.2
+            self.reward[0] = -0.3
         else:
             self.reward[0] = -0.1
 
         if new_distance_2 < old_distance_2:
             self.reward[1] = 0.15
         elif new_distance_2 == old_distance_2:
-            self.reward[1] = -0.2
+            self.reward[1] = -0.3
         else:
             self.reward[1] = -0.1
 
         if (x1 == gx1 and y1 == gy1):
             self.reward[0] = 0.5
             self.reward[1] = 0.5
-            gx1, self.state[4] = 99, 99
-            gy1, self.state[5] = 99, 99
+            gx1, self.state[4] = -99, -99
+            gy1, self.state[5] = -99, -99
         elif (x2 == gx1 and y2 == gy1):
             self.reward[1] = 0.5        
-            gx1, self.state[4] = 99, 99
-            gy1, self.state[5] = 99, 99
+            gx1, self.state[4] = -99, -99
+            gy1, self.state[5] = -99, -99
         elif (x1 == gx2 and y1 == gy2):
             self.reward[0] = 0.5
-            gx2, self.state[6] = 99, 99
-            gy2, self.state[7] = 99, 99
+            gx2, self.state[6] = -99, -99
+            gy2, self.state[7] = -99, -99
         elif (x2 == gx2 and y2 == gy2):
             self.reward[1] = 0.5
-            gx2, self.state[6] = 99, 99
-            gy2, self.state[7] = 99, 99
+            gx2, self.state[6] = -99, -99
+            gy2, self.state[7] = -99, -99
                
-        if gx1 == 99 and gx2 == 99 and gy1 == 99 and gy2 == 99:
+        if gx1 == -99 and -gx2 == 99 and -gy1 == 99 and -gy2 == 99:
             terminated = True
         else:
             terminated = False
@@ -144,13 +147,14 @@ class GridEnv(gym.Env):
         #print(self.state, reward, terminated)
         self.timestep += 1
         self.tot_reward += (self.reward[0] + self.reward[1])
-        return self.state, self.reward, terminated, False, {}
+        return self.state.copy(), self.reward[0]+self.reward[1], terminated, False, {}
     
     def get_timestep(self):
         return self.timestep
 
     def render(self):
-        self.grid_GUI.render(self.state[0:2], self.state[2:4], self.state[4:6], self.state[6:8], self.timestep, self.tot_reward)
+        if self.render_mode == "human":
+            self.grid_GUI.render(self.state[0:2], self.state[2:4], self.state[4:6], self.state[6:8], self.timestep, self.tot_reward)
 
     def check_wall(self, action):
         x, y = self.state[0], self.state[1]
@@ -214,7 +218,7 @@ class GridEnvGUI:
         x2 = x1 + self.cell_size
         y2 = y1 + self.cell_size        
         self.canvas.create_rectangle(x1, y1, x2, y2, fill=color)
-        time.sleep(0.05)
+        time.sleep(0.03)
 
     def render(self, agent_pos1, agent_pos2, goal_pos1, goal_pos2, timestep, tot_reward, color="blue"):
         self.canvas.delete("all")
