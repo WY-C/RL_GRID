@@ -92,7 +92,7 @@ class DQNAgent:
 
     gamma = 0.99
     epsilon = 1.0
-    epsilon_min = 0.01
+    epsilon_min = 0.1
     epsilon_decay = 0.95
 
     def __init__(self, state_size, action_size):
@@ -160,7 +160,7 @@ class DQNAgent:
 
 
 class ReplayBuffer:
-    def __init__(self, batch_size, buffer_size = 10000):
+    def __init__(self, batch_size = 32, buffer_size = 10000):
         self.batch_size = batch_size
         self.buffer = deque(maxlen=buffer_size)
 
@@ -193,16 +193,16 @@ class ReplayAgent:
     
     model = DQN(state_size, action_size).to(device)
     target_model = DQN(state_size, action_size).to(device)
-    learning_rate = 0.0001
+    learning_rate = 0.001
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
     criterion = nn.MSELoss()
 
-    replay_buffer = ReplayBuffer(batch_size=64, buffer_size=100000)
+    replay_buffer = ReplayBuffer()
 
-    gamma = 0.99
+    gamma = 0.9
     epsilon = 1.0
-    epsilon_min = 0.01
-    epsilon_decay = 0.99
+    epsilon_min = 0.1
+    epsilon_decay = 0.95
 
     def __init__(self, state_size, action_size):
         
@@ -222,7 +222,7 @@ class ReplayAgent:
         self.model.load_state_dict(checkpoint['model_state_dict'])
         self.target_model.load_state_dict(checkpoint['target_model_state_dict'])
         self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-        DQNAgent.epsilon = checkpoint['epsilon']
+        ReplayAgent.epsilon = checkpoint['epsilon']
 
     def choose_action(self, state):
         if np.random.rand() <= self.epsilon:
@@ -251,9 +251,9 @@ class ReplayAgent:
         qs = self.model(states).gather(1, actions.view(-1, 1)).squeeze(1)
 
         with torch.no_grad():
-            #next_actions = self.model(next_states).argmax(dim=1)
-            #next_qs = self.target_model(next_states).gather(1, next_actions.view(-1, 1)).squeeze(1)
-            next_qs = self.target_model(next_states).max(dim=1)[0]
+            next_actions = self.model(next_states).argmax(dim=1)
+            next_qs = self.target_model(next_states).gather(1, next_actions.view(-1, 1)).squeeze(1)
+            #next_qs = self.target_model(next_states).max(dim=1)[0]
             target = rewards + (1 - dones) * self.gamma * next_qs
 
         

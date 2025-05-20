@@ -9,8 +9,8 @@ from matplotlib import pyplot as plt
 # model.save("dqn_grid")
 
 env = GridEnv(5)
-Agent1 = ReplayAgent(state_size=8, action_size=4)
-Agent2 = ReplayAgent(state_size=8, action_size=4)
+Agent1 = DQNAgent(state_size=8, action_size=4)
+Agent2 = DQNAgent(state_size=8, action_size=4)
 
 tot_reward = 0
 tot_timestep = 0
@@ -21,11 +21,13 @@ reward = [0, 0]
 
 #save, load시 target model, epsilon도 같이.
 try:
-    Agent1.load_model("model/Agent1_mk2_111100.pth")
-    Agent2.load_model("model/Agent2_mk2_111100.pth")
+    Agent1.load_model("model/6000_Agent1_DDQN_PER.pth")
+    Agent2.load_model("model/6000_Agent2_DDQN_PER.pth")
     print("Model loaded successfully.")
 except:
     print("Model not found, starting training from scratch.")
+DQNAgent.epsilon = max(DQNAgent.epsilon_min, DQNAgent.epsilon)
+        
 for i in range(100000000):
     state, _= env.reset()
     terminated = False
@@ -43,8 +45,8 @@ for i in range(100000000):
         action[0] = Agent1.choose_action(state)
         action[1] = Agent2.choose_action(state)
         next_state, reward, terminated, _, _ = env.step(action) #truncated 없음
-        Agent1.replay_buffer.add(state, action[0], reward[0], next_state, terminated)
-        Agent2.replay_buffer.add(state, action[1], reward[1], next_state, terminated)
+        Agent1.replay_buffer.add(state, action[0], reward[0], next_state, terminated, 3)
+        Agent2.replay_buffer.add(state, action[1], reward[1], next_state, terminated, 3)
 
         #reward 연산 해결하기
         tot_reward += (reward[0] + reward[1])
@@ -63,13 +65,13 @@ for i in range(100000000):
     if (i + 1) % 100 == 0:
         Agent1.update_target_model() 
     if terminated and (i + 1) % printing == 0:
-        DQNAgent.epsilon = max(DQNAgent.epsilon_min, DQNAgent.epsilon * DQNAgent.epsilon_decay)  
-        print(f"Episode {i+1} finished with reward: {tot_reward/printing:.2f}, timestep: {tot_timestep/printing:.3f}, Epsilon: {DQNAgent.epsilon:.3f}")
+        DQNAgent.epsilon = max(DQNAgent.epsilon_min, DQNAgent.epsilon * DQNAgent.epsilon_decay)
+        print(f"Episode {i+6001} finished with reward: {tot_reward/printing:.2f}, timestep: {tot_timestep/printing:.3f}, Epsilon: {DQNAgent.epsilon:.3f}")
         tot_timestep = 0
         tot_reward = 0
 
     if (i + 1) % 1000 == 0:
-        Agent1.save_model(f"model/{i+1}_Agent1_DQN_Replay.pth")
-        Agent2.save_model(f"model/{i+1}_Agent2_DQN_Replay.pth")
+        Agent1.save_model(f"model/{i+6001}_Agent1_DDQN_PER.pth")
+        Agent2.save_model(f"model/{i+6001}_Agent2_DDQN_PER.pth")
         print(f"Model saved at episode {i+1}")
     
